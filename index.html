@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카카오맵 내 위치 확인</title>
+    <!-- 사용자분의 카카오 JavaScript 키 적용 완료 -->
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=64961e084dede515b221656f5fe6600c&autoload=false"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        #map {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #f1f3f5;
+        }
+        #status-card {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 14px 18px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-size: 13px;
+            line-height: 1.6;
+            max-width: 320px;
+        }
+    </style>
+</head>
+<body>
+<div id="status-card">
+    <strong id="status-title" style="color: #007aff;">📍 위치 확인 중...</strong><br>
+    <span id="coords" style="color: #555;">브라우저 상단의 위치 권한 팝업에서 [허용]을 눌러주세요.</span>
+</div>
+
+<div id="map"></div>
+
+<script>
+    // 기본 좌표 (서울시청) - 위치 획득 실패 시 대체용
+    var defaultLat = 37.5668;
+    var defaultLng = 126.9786;
+
+    // 1. 브라우저 위치 정보(GPS) 우선 요청
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                var lat = position.coords.latitude;
+                var lng = position.coords.longitude;
+                var accuracy = Math.round(position.coords.accuracy);
+
+                document.getElementById('status-title').innerText = '✅ 현재 위치 수신 완료';
+                document.getElementById('status-title').style.color = '#10b981';
+                document.getElementById('coords').innerHTML =
+                    '위도: ' + lat.toFixed(5) + '<br>' +
+                    '경도: ' + lng.toFixed(5) + '<br>' +
+                    '오차 반경: 약 ' + accuracy + 'm';
+
+                // 수신된 실제 위치로 지도 생성
+                renderMap(lat, lng, '현재 내 위치');
+            },
+            function(error) {
+                var errorMsg = '위치 접근이 거부되었습니다.';
+                if (error.code === 2) errorMsg = '위치를 판별할 수 없습니다.';
+                if (error.code === 3) errorMsg = '위치 응답 시간 초과.';
+
+                document.getElementById('status-title').innerText = '⚠️ GPS 확인 불가 (기본 위치 표시)';
+                document.getElementById('status-title').style.color = '#f59e0b';
+                document.getElementById('coords').innerHTML = errorMsg + '<br>(주소창 왼쪽 ⓘ 아이콘에서 권한을 확인하세요)';
+
+                // 위치 획득 실패 시에도 화면이 멈추지 않고 기본 위치로 지도 표시
+                renderMap(defaultLat, defaultLng, '기본 설정 위치 (서울시청)');
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 8000,
+                maximumAge: 0
+            }
+        );
+    } else {
+        document.getElementById('status-title').innerText = '❌ Geolocation 미지원';
+        document.getElementById('coords').innerText = '브라우저가 위치 기능을 지원하지 않습니다.';
+        renderMap(defaultLat, defaultLng, '기본 설정 위치');
+    }
+
+    // 2. 카카오 지도 렌더링 함수
+    function renderMap(lat, lng, labelText) {
+        if (typeof kakao === 'undefined' || !kakao.maps) {
+            document.getElementById('status-title').innerText = '❌ 카카오 지도 SDK 오류';
+            document.getElementById('status-title').style.color = '#ef4444';
+            document.getElementById('coords').innerHTML =
+                '카카오 콘솔에 <b>http://localhost:63342</b> 가 등록되어 있는지 확인해 주세요.';
+            return;
+        }
+
+        kakao.maps.load(function() {
+            var mapContainer = document.getElementById('map');
+            var mapOption = {
+                center: new kakao.maps.LatLng(lat, lng),
+                level: 3
+            };
+            var map = new kakao.maps.Map(mapContainer, mapOption);
+
+            // 마커 생성
+            var marker = new kakao.maps.Marker({
+                position: new kakao.maps.LatLng(lat, lng),
+                map: map
+            });
+
+            // 정보 창 띄우기
+            var infowindow = new kakao.maps.InfoWindow({
+                content: '<div style="padding:6px 10px; font-size:12px; font-weight:bold; min-width:100px; text-align:center;">' + labelText + '</div>'
+            });
+            infowindow.open(map, marker);
+        });
+    }
+</script>
+</body>
+</html>
