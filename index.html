@@ -1,11 +1,18 @@
 <!DOCTYPE html>
+
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
+
+    <!--모바일과 PC 기기의 화면 크기에 맞춰 페이지를 반응형으로 띄우도록 너비(device-width)와 초기 확대 배율(1.0)을 설정한다 (반응형). -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>카카오맵 실시간 내 위치</title>
+
     <!-- 카카오맵 SDK (자바스크립트 키 적용) -->
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=64961e084dede515b221656f5fe6600c&autoload=false"></script>
+
     <style>
         * {
             margin: 0;
@@ -41,6 +48,7 @@
         }
     </style>
 </head>
+
 <body>
 <div id="status-card">
     <strong id="status-title" style="color: #007aff;">📍 위치 확인 중...</strong><br>
