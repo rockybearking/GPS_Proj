@@ -4,12 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>카카오맵 실시간 내 위치</title>
-
-    <!-- 분리한 CSS 스타일시트 연결 (누락되었던 부분 추가) -->
+    <title>카카오맵 실시간 내 위치 & 응급의료기관 조회</title>
     <link rel="stylesheet" href="style.css">
-
-    <!-- 카카오맵 SDK (외부 원격 라이브러리이므로 head에 유지) -->
+    <!-- 카카오맵 SDK -->
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=64961e084dede515b221656f5fe6600c&autoload=false"></script>
 </head>
 
@@ -25,7 +22,32 @@
     <button id="search-btn" style="background: #007aff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">검색</button>
 </div>
 
-<!-- 1. 좌측 하단 내 위치 이동 원형 버튼 추가 -->
+<!-- 좌측 하단 반경 선택 플로팅 메뉴 (스피드 다이얼) -->
+<div id="radius-menu-wrapper">
+    <!-- 클릭 시 촤르륵 펼쳐질 반경 옵션 버튼 그룹 (초기 숨김 대상) -->
+    <div id="radius-options" class="radius-options">
+        <button class="radius-btn" data-radius="5">5km</button>
+        <button class="radius-btn active" data-radius="10">10km</button>
+        <button class="radius-btn" data-radius="15">15km</button>
+        <button class="radius-btn" data-radius="20">20km</button>
+        <button class="radius-btn" data-radius="30">30km</button>
+        <button class="radius-btn" data-radius="40">40km</button>
+        <button class="radius-btn" data-radius="50">50km</button>
+        <button class="radius-btn" data-radius="100">100km</button>
+    </div>
+
+    <!-- 평상시 노출되는 내 위치 버튼 크기의 원형 대표 버튼 -->
+    <button id="radius-main-btn" title="탐색 반경 변경" aria-label="탐색 반경 변경">
+        <!-- 동심원(반경/레이더) 아이콘 -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="6"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+        </svg>
+    </button>
+</div>
+
+<!-- 좌측 하단 내 위치 이동 원형 버튼 -->
 <button id="my-loc-btn" title="내 위치로 이동" aria-label="내 위치로 이동">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="7"></circle>
@@ -38,10 +60,7 @@
 
 <div id="map"></div>
 
-<!-- 분리한 자바스크립트 파일 연결 -->
-<!-- 브라우저가 화면 요소들을 먼저 생성한 후에 자바스크립트가 실행되어야 에러 없음 (주의!) -->
 <script src="app.js"></script>
-
 </body>
 
 </html>
