@@ -24,7 +24,6 @@
 
 <!-- 좌측 하단 반경 선택 플로팅 메뉴 (스피드 다이얼) -->
 <div id="radius-menu-wrapper">
-    <!-- 클릭 시 촤르륵 펼쳐질 반경 옵션 버튼 그룹 (초기 숨김 대상) -->
     <div id="radius-options" class="radius-options">
         <button class="radius-btn" data-radius="5">5km</button>
         <button class="radius-btn active" data-radius="10">10km</button>
@@ -36,9 +35,7 @@
         <button class="radius-btn" data-radius="100">100km</button>
     </div>
 
-    <!-- 평상시 노출되는 내 위치 버튼 크기의 원형 대표 버튼 -->
     <button id="radius-main-btn" title="탐색 반경 변경" aria-label="탐색 반경 변경">
-        <!-- 동심원(반경/레이더) 아이콘 -->
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
             <circle cx="12" cy="12" r="6"></circle>
@@ -59,6 +56,37 @@
 </button>
 
 <div id="map"></div>
+
+<!-- 바텀시트 배경 어둡게 처리 (딤 오버레이) -->
+<div id="sheet-dim" class="sheet-dim"></div>
+
+<!-- 하단 슬라이드 바텀시트 -->
+<div id="bottom-sheet" class="bottom-sheet">
+    <div class="sheet-drag-handle-area" id="sheet-drag-area">
+        <div class="sheet-drag-bar"></div>
+    </div>
+    <div class="sheet-header">
+        <div class="sheet-title-wrap">
+            <h2 id="sheet-hospital-name" class="sheet-hospital-name">병원명</h2>
+            <span id="sheet-distance" class="sheet-distance">0.0km</span>
+        </div>
+        <button id="sheet-close-btn" class="sheet-close-btn" aria-label="닫기">&times;</button>
+    </div>
+    <div class="sheet-body">
+        <div class="sheet-row">
+            <span class="sheet-label">응급실 가용병상</span>
+            <span id="sheet-bed-badge" class="bed-badge bed-warning">확인 중</span>
+        </div>
+        <div class="sheet-row">
+            <span class="sheet-label">대표 전화번호</span>
+            <a id="sheet-tel-link" href="#" class="sheet-tel-btn">📞 전화 연결</a>
+        </div>
+        <div class="sheet-msg-section">
+            <div class="sheet-msg-title">⚠️ 실시간 응급실 진료 공지 / 특이사항</div>
+            <div id="sheet-msg-content" class="sheet-msg-box">등록된 실시간 공지사항이 없습니다.</div>
+        </div>
+    </div>
+</div>
 
 <script src="app.js"></script>
 </body>

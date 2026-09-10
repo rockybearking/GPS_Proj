@@ -1,41 +1,32 @@
 /* global kakao */
 
-// 공공데이터포털 디코딩된 인증키 (응급의료기관 정보 조회용)
 const PUBLIC_API_KEY = decodeURIComponent('s%2FvWNiKH1YndVRu2mPOq7OXAIj%2Byk0M3JTgvN%2B8UVdSFPq8SBR7zuUdG3mxklTrj6WYIiUidSIUwgE8bz09fzQ%3D%3D');
 
-// GPS 수신 실패 또는 초기 실행 시 사용할 기본 좌표 (서울시청 기준)
 const defaultLat = 37.5668;
 const defaultLng = 126.9786;
 
-/** @type {any} */
 // ============================================================================
 // 전역 변수 선언부
 // ============================================================================
-let map = null;                 // 카카오맵 인스턴스를 담을 변수
-let myLocationOverlay = null;   // 내 위치를 나타내는 커스텀 점 마커
-let currentLatLng = null;       // 현재 사용자의 위경도(Kakao LatLng 객체)
-let activeCircle = null;        // 지도 위에 그려진 탐색 반경 원 객체
-let activeCircleLabel = null;   // 반경 원 최상단에 표시되는 거리 라벨(CustomOverlay)
-let hospitalOverlays = [];      // 지도에 렌더링된 병원 말풍선 오버레이들을 담는 배열
-let currentRadiusKm = 10;       // 현재 선택된 탐색 반경 (기본 10km)
-let cachedHospitals = [];       // API를 통해 최초 1회 받아온 전체 병원 목록 캐시
+let map = null;
+let myLocationOverlay = null;
+let currentLatLng = null;
+let activeCircle = null;
+let activeCircleLabel = null;
+let hospitalOverlays = [];
+let currentRadiusKm = 10;
+let cachedHospitals = [];
 
-// 카카오 지도 SDK 로드 확인 후 앱 초기화 실행
+// SDK 로드 확인 후 앱 초기화
 if (typeof kakao === 'undefined' || !kakao.maps) {
     document.getElementById('status-title').innerText = '❌ 카카오 지도 SDK 오류';
 } else {
     kakao.maps.load(function () {
         initMap();
+        initBottomSheetEvents();
     });
 }
 
-/**
- * [함수 1] 지도를 초기화하고 화면의 각종 버튼 이벤트 및 지도 이벤트를 바인딩하는 함수
- * - 카카오 지도 인스턴스 생성 및 화면 리사이즈/줌 이벤트 처리
- * - 내 위치 커스텀 마커 생성
- * - 반경 메인 원형 버튼 토글 및 반경 선택 이벤트 등록
- * - 병원 데이터 수신 함수(loadAllEmergencyData) 실행
- */
 function initMap() {
     const mapContainer = document.getElementById('map');
     const mapOption = {
@@ -47,12 +38,10 @@ function initMap() {
 
     map = new kakao.maps.Map(mapContainer, mapOption);
 
-    // 브라우저 창 크기가 변경될 때 지도가 깨지지 않도록 영역을 다시 계산
     window.addEventListener('resize', () => {
         if (map) map.relayout();
     });
 
-    // 줌 레벨에 따른 대형 원 렌더링 최적화
     kakao.maps.event.addListener(map, 'zoom_changed', function () {
         const level = map.getLevel();
         if (!activeCircle) return;
@@ -66,7 +55,6 @@ function initMap() {
         }
     });
 
-    // 내 위치 펄스 애니메이션 마커 생성
     const markerContent = document.createElement('div');
     markerContent.className = 'my-location-marker';
     markerContent.innerHTML = '<div class="my-location-pulse"></div><div class="my-location-dot"></div>';
@@ -79,43 +67,33 @@ function initMap() {
         zIndex: 10
     });
 
-    // ------------------------------------------------------------------------
-    // [반경 선택 인터랙션 로직]
-    // ------------------------------------------------------------------------
+    // 반경 메뉴 이벤트
     const radiusMainBtn = document.getElementById('radius-main-btn');
     const radiusOptions = document.getElementById('radius-options');
 
-    // 1. 원형 메인 버튼 클릭 시 옵션 패널 열기/닫기 토글
     if (radiusMainBtn && radiusOptions) {
         radiusMainBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // 이벤트가 상위 document로 전파되어 바로 닫히는 것 방지
+            e.stopPropagation();
             radiusOptions.classList.toggle('open');
         });
     }
 
-    // 2. 펼쳐진 반경 옵션 버튼(5km~100km) 클릭 이벤트
     document.querySelectorAll('.radius-btn').forEach(button => {
         button.addEventListener('click', function (e) {
             e.stopPropagation();
-
-            // 기존 활성 버튼 클래스 제거 후 클릭한 버튼에 active 부여
             document.querySelectorAll('.radius-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
 
-            // 반경 값 갱신 및 지도/병원 다시 그리기
             currentRadiusKm = parseInt(this.getAttribute('data-radius'), 10);
             if (currentLatLng) {
                 renderRadiusAndHospitals(currentLatLng, currentRadiusKm);
             }
-
-            // 반경 선택 완료 후 옵션 목록 닫기
             if (radiusOptions) {
                 radiusOptions.classList.remove('open');
             }
         });
     });
 
-    // 3. 지도나 화면 빈 공간 클릭 시 열려 있던 옵션 패널 자동 닫기
     document.addEventListener('click', (e) => {
         const wrapper = document.getElementById('radius-menu-wrapper');
         if (wrapper && !wrapper.contains(e.target) && radiusOptions) {
@@ -123,25 +101,15 @@ function initMap() {
         }
     });
 
-    // ------------------------------------------------------------------------
-    // 내 위치 이동 버튼 클릭 이벤트
-    // ------------------------------------------------------------------------
     document.getElementById('my-loc-btn').addEventListener('click', () => {
         moveToCurrentLocation(false);
     });
 
-    // 앱 시작 시 전체 병원 데이터를 받아온 뒤 현재 위치로 이동
     loadAllEmergencyData().then(() => {
         moveToCurrentLocation(true);
     });
 }
 
-/**
- * [함수 2] XML 노드 안에서 특정 태그의 텍스트 값을 안전하게 문자열로 꺼내는 헬퍼 함수
- * @param {Element} parent - 검색 대상 부모 XML 노드
- * @param {string} tagName - 가져올 XML 태그명
- * @returns {string} 추출된 텍스트(없을 경우 빈 문자열 반환)
- */
 function getXmlText(parent, tagName) {
     const nodes = parent.getElementsByTagName(tagName);
     if (nodes && nodes.length > 0 && nodes[0].textContent) {
@@ -151,9 +119,7 @@ function getXmlText(parent, tagName) {
 }
 
 /**
- * [함수 3] 공공데이터포털 응급의료 API를 호출하여 병원 목록과 실시간 가용 병상 정보를 수집하는 함수
- * - 병원 기본 정보(이름, 전화번호, 좌표 등)와 실시간 응급실 가용 병상 수(hvec)를 병렬 수신
- * - 수신된 데이터를 매핑하여 전역 배열 `cachedHospitals`에 캐싱
+ * 3개 API 병렬 조회 (목록 + 가용병상 + 실시간 중증/응급 메시지)
  */
 async function loadAllEmergencyData() {
     document.getElementById('status-title').innerText = '⏳ 응급의료기관 데이터 수신 중...';
@@ -165,15 +131,27 @@ async function loadAllEmergencyData() {
         const bedUrl = `https://apis.data.go.kr/B552657/ErmctInfoInqireService/getEmrrmRltmUsefulSckbdInfoInqire` +
             `?serviceKey=${encodeURIComponent(PUBLIC_API_KEY)}&pageNo=1&numOfRows=1000`;
 
-        // 두 API 동시 병렬 요청
-        const [listRes, bedRes] = await Promise.all([fetch(listUrl), fetch(bedUrl)]);
-        const [listXmlText, bedXmlText] = await Promise.all([listRes.text(), bedRes.text()]);
+        const msgUrl = `https://apis.data.go.kr/B552657/ErmctInfoInqireService/getEmrrmSrsillDissMsgInqire` +
+            `?serviceKey=${encodeURIComponent(PUBLIC_API_KEY)}&pageNo=1&numOfRows=1000`;
+
+        const [listRes, bedRes, msgRes] = await Promise.all([
+            fetch(listUrl),
+            fetch(bedUrl),
+            fetch(msgUrl)
+        ]);
+
+        const [listXmlText, bedXmlText, msgXmlText] = await Promise.all([
+            listRes.text(),
+            bedRes.text(),
+            msgRes.text()
+        ]);
 
         const parser = new DOMParser();
         const listDoc = parser.parseFromString(listXmlText, 'application/xml');
         const bedDoc = parser.parseFromString(bedXmlText, 'application/xml');
+        const msgDoc = parser.parseFromString(msgXmlText, 'application/xml');
 
-        // 병상 정보 Map 매핑 (Key: 기관코드 hpid, Value: 가용 병상 수 hvec)
+        // 병상 맵
         const bedMap = new Map();
         const bedItems = bedDoc.getElementsByTagName('item');
         for (let i = 0; i < bedItems.length; i++) {
@@ -186,7 +164,22 @@ async function loadAllEmergencyData() {
             }
         }
 
-        // 병원 기본 목록 파싱 및 캐시 배열 구성
+        // 실시간 특이사항 메시지 맵 (hpid -> 메시지)
+        const msgMap = new Map();
+        const msgItems = msgDoc.getElementsByTagName('item');
+        for (let i = 0; i < msgItems.length; i++) {
+            const item = msgItems[i];
+            const hpid = getXmlText(item, 'hpid');
+            const msg = getXmlText(item, 'symBlkMsg');
+            if (hpid && msg) {
+                if (msgMap.has(hpid)) {
+                    msgMap.set(hpid, msgMap.get(hpid) + '<br>• ' + msg);
+                } else {
+                    msgMap.set(hpid, '• ' + msg);
+                }
+            }
+        }
+
         cachedHospitals = [];
         const listItems = listDoc.getElementsByTagName('item');
         for (let i = 0; i < listItems.length; i++) {
@@ -207,7 +200,8 @@ async function loadAllEmergencyData() {
                     tel,
                     lat,
                     lng,
-                    hvec: bedMap.has(hpid) ? bedMap.get(hpid) : null
+                    hvec: bedMap.has(hpid) ? bedMap.get(hpid) : null,
+                    message: msgMap.get(hpid) || null
                 });
             }
         }
@@ -219,12 +213,6 @@ async function loadAllEmergencyData() {
     }
 }
 
-/**
- * [함수 4] 브라우저 Geolocation API를 사용하여 현재 위치 좌표를 가져오고 지도를 이동시키는 함수
- * - 성공 시: 현재 위치로 지도 중심 이동 및 탐색 반경/병원 렌더링
- * - 실패/거부 시: 서울시청 기본 좌표로 대체 실행
- * @param {boolean} isInitial - 앱 최초 실행 여부 (true면 setCenter, false면 부드러운 panTo)
- */
 function moveToCurrentLocation(isInitial) {
     if (!navigator.geolocation) {
         document.getElementById('status-title').innerText = '❌ Geolocation 미지원';
@@ -235,10 +223,13 @@ function moveToCurrentLocation(isInitial) {
         function (position) {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
+            const accuracy = Math.round(position.coords.accuracy);
+
             currentLatLng = new kakao.maps.LatLng(lat, lng);
 
             document.getElementById('status-title').innerText = '✅ 위치 갱신 완료';
-            document.getElementById('coords').innerHTML = `• 위도: ${lat.toFixed(5)} | 경도: ${lng.toFixed(5)}`;
+            document.getElementById('coords').innerHTML =
+                `• 위도: ${lat.toFixed(5)} | 경도: ${lng.toFixed(5)}<br>• 오차범위: 약 ±${accuracy}m`;
 
             myLocationOverlay.setPosition(currentLatLng);
             myLocationOverlay.setMap(map);
@@ -252,6 +243,8 @@ function moveToCurrentLocation(isInitial) {
             renderRadiusAndHospitals(currentLatLng, currentRadiusKm);
         },
         function () {
+            document.getElementById('status-title').innerText = '⚠️ 기본 위치(서울시청) 적용';
+            document.getElementById('coords').innerHTML = `• 위치 권한이 거부되었거나 수신할 수 없습니다.`;
             currentLatLng = new kakao.maps.LatLng(defaultLat, defaultLng);
             renderRadiusAndHospitals(currentLatLng, currentRadiusKm);
         },
@@ -259,19 +252,12 @@ function moveToCurrentLocation(isInitial) {
     );
 }
 
-/**
- * [함수 5] 지도 위에 선택된 반경의 원(Circle)과 상단 거리 라벨을 그리고, 화면 영역(Bounds)을 맞추는 함수
- * @param {kakao.maps.LatLng} center - 원의 중심점 좌표
- * @param {number} radiusKm - 반경 거리 (단위: km)
- */
 function renderRadiusAndHospitals(center, radiusKm) {
     const radiusMeters = radiusKm * 1000;
 
-    // 기존 원과 라벨 제거
     if (activeCircle) activeCircle.setMap(null);
     if (activeCircleLabel) activeCircleLabel.setMap(null);
 
-    // 새 반경 원 생성
     activeCircle = new kakao.maps.Circle({
         center: center,
         radius: radiusMeters,
@@ -284,7 +270,6 @@ function renderRadiusAndHospitals(center, radiusKm) {
     });
     activeCircle.setMap(map);
 
-    // 원 최상단에 붙일 라벨 위치 계산
     const latOffset = radiusMeters / 111319.5;
     const topPosition = new kakao.maps.LatLng(center.getLat() + latOffset, center.getLng());
 
@@ -301,22 +286,14 @@ function renderRadiusAndHospitals(center, radiusKm) {
     });
     activeCircleLabel.setMap(map);
 
-    // 원 전체가 화면 안에 모두 들어오도록 지도 줌/중심 영역(Bounds) 자동 조절
     const lngOffset = radiusMeters / (111319.5 * Math.cos(center.getLat() * (Math.PI / 180)));
     const sw = new kakao.maps.LatLng(center.getLat() - latOffset, center.getLng() - lngOffset);
     const ne = new kakao.maps.LatLng(center.getLat() + latOffset, center.getLng() + lngOffset);
     map.setBounds(new kakao.maps.LatLngBounds(sw, ne));
 
-    // 반경 내 병원 필터링 및 말풍선 렌더링 호출
     filterAndDisplayHospitals(center.getLat(), center.getLng(), radiusKm);
 }
 
-/**
- * [함수 6] 캐시된 전체 병원 중 중심 좌표로부터 선택된 반경(km) 내에 위치한 병원만 필터링하는 함수
- * @param {number} centerLat - 중심 위도
- * @param {number} centerLng - 중심 경도
- * @param {number} radiusKm - 검색 반경(km)
- */
 function filterAndDisplayHospitals(centerLat, centerLng, radiusKm) {
     clearHospitals();
 
@@ -336,15 +313,13 @@ function filterAndDisplayHospitals(centerLat, centerLng, radiusKm) {
 }
 
 /**
- * [함수 7] 개별 병원 정보를 담은 커스텀 말풍선 오버레이(CustomOverlay)를 만들어 지도에 표시하는 함수
- * - 병상 수(hvec)에 따라 여유/혼잡/부족 색상 뱃지 분기 처리
- * @param {Object} h - 병원 정보 객체 (name, distance, tel, hvec, lat, lng)
+ * 개별 병원 말풍선 오버레이 생성
+ * - 클릭 시 바텀시트를 띄우는 이벤트 바인딩 포함
  */
 function createHospitalBubble(h) {
     let bedText = '정보 없음';
     let bedClass = 'bed-warning';
 
-    // 실시간 병상 현황 상태값 분류
     if (h.hvec !== null && h.hvec !== undefined) {
         if (h.hvec > 5) {
             bedText = `${h.hvec}석 여유`;
@@ -360,14 +335,21 @@ function createHospitalBubble(h) {
 
     const bubble = document.createElement('div');
     bubble.className = 'hospital-bubble';
+    bubble.title = '클릭하여 상세 정보 확인';
     bubble.innerHTML = `
-        <div class="hospital-name" title="${h.name}">${h.name}</div>
-        <div class="hospital-info">${h.distance.toFixed(1)}km | 📞 <a href="tel:${h.tel}" style="color:#007aff; text-decoration:none;">${h.tel || '번호 없음'}</a></div>
+        <div class="hospital-name">${h.name}</div>
+        <div class="hospital-info">${h.distance.toFixed(1)}km | 📞 ${h.tel || '번호 없음'}</div>
         <div>
             <span style="font-size:10px; color:#64748b;">응급실: </span>
             <span class="bed-badge ${bedClass}">${bedText}</span>
         </div>
     `;
+
+    // 말풍선 클릭 시 바텀시트 오픈
+    bubble.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openHospitalBottomSheet(h, bedText, bedClass);
+    });
 
     const overlay = new kakao.maps.CustomOverlay({
         position: new kakao.maps.LatLng(h.lat, h.lng),
@@ -381,16 +363,8 @@ function createHospitalBubble(h) {
     hospitalOverlays.push(overlay);
 }
 
-/**
- * [함수 8] 두 위경도 좌표 사이의 대원(직선) 거리를 구하는 함수 (Haversine 공식)
- * @param {number} lat1 - 지점 1 위도
- * @param {number} lon1 - 지점 1 경도
- * @param {number} lat2 - 지점 2 위도
- * @param {number} lon2 - 지점 2 경도
- * @returns {number} 두 지점 사이의 거리 (단위: km)
- */
 function getDistanceKm(lat1, lon1, lat2, lon2) {
-    const R = 6371; // 지구 평균 반경 (km)
+    const R = 6371;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a =
@@ -401,10 +375,129 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
     return R * c;
 }
 
-/**
- * [함수 9] 지도 위에 표시된 모든 병원 말풍선 오버레이를 화면에서 제거하고 배열을 비우는 함수
- */
 function clearHospitals() {
     hospitalOverlays.forEach(ov => ov.setMap(null));
     hospitalOverlays = [];
+}
+
+// ============================================================================
+// [바텀시트 오픈 / 제스처 닫기 이벤트 로직]
+// ============================================================================
+const sheet = document.getElementById('bottom-sheet');
+const dim = document.getElementById('sheet-dim');
+const dragArea = document.getElementById('sheet-drag-area');
+
+function openHospitalBottomSheet(h, bedText, bedClass) {
+    document.getElementById('sheet-hospital-name').innerText = h.name;
+    document.getElementById('sheet-distance').innerText = `내 위치로부터 ${h.distance.toFixed(1)}km`;
+
+    const badgeEl = document.getElementById('sheet-bed-badge');
+    badgeEl.className = `bed-badge ${bedClass}`;
+    badgeEl.innerText = bedText;
+
+    const telLink = document.getElementById('sheet-tel-link');
+    if (h.tel) {
+        telLink.href = `tel:${h.tel}`;
+        telLink.innerText = `📞 ${h.tel} 통화`;
+        telLink.style.display = 'inline-block';
+    } else {
+        telLink.style.display = 'none';
+    }
+
+    const msgEl = document.getElementById('sheet-msg-content');
+    if (h.message) {
+        msgEl.innerHTML = h.message;
+        msgEl.style.color = '#991b1b';
+    } else {
+        msgEl.innerHTML = '현재 등록된 실시간 제한/공지 메시지가 없습니다.';
+        msgEl.style.color = '#64748b';
+    }
+
+    sheet.style.transform = '';
+    sheet.classList.add('open');
+    dim.classList.add('active');
+}
+
+function closeBottomSheet() {
+    sheet.classList.remove('open');
+    sheet.style.transform = '';
+    dim.classList.remove('active');
+}
+
+function initBottomSheetEvents() {
+    // 닫기 버튼 및 딤 클릭
+    document.getElementById('sheet-close-btn').addEventListener('click', closeBottomSheet);
+    dim.addEventListener('click', closeBottomSheet);
+
+    // ========================================================================
+    // 터치 및 마우스 드래그로 바텀시트 아래로 쓸어내려 닫기 로직
+    // ========================================================================
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    // 모바일 터치 이벤트
+    dragArea.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+        isDragging = true;
+        sheet.style.transition = 'none'; // 드래그 중에는 즉각 반응
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentY = e.touches[0].clientY;
+        const deltaY = currentY - startY;
+
+        // 아래로 내릴 때만 시트 이동
+        if (deltaY > 0) {
+            sheet.style.transform = `translateY(${deltaY}px)`;
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        sheet.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)';
+
+        const deltaY = currentY - startY;
+        // 70px 이상 아래로 내렸으면 닫기, 아니면 원위치
+        if (deltaY > 70) {
+            closeBottomSheet();
+        } else {
+            sheet.style.transform = 'translateY(0)';
+        }
+        startY = 0;
+        currentY = 0;
+    });
+
+    // 데스크톱 마우스 드래그 이벤트
+    dragArea.addEventListener('mousedown', (e) => {
+        startY = e.clientY;
+        isDragging = true;
+        sheet.style.transition = 'none';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        currentY = e.clientY;
+        const deltaY = currentY - startY;
+        if (deltaY > 0) {
+            sheet.style.transform = `translateY(${deltaY}px)`;
+        }
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        sheet.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)';
+
+        const deltaY = currentY - startY;
+        if (deltaY > 70) {
+            closeBottomSheet();
+        } else {
+            sheet.style.transform = 'translateY(0)';
+        }
+        startY = 0;
+        currentY = 0;
+    });
 }

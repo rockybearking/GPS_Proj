@@ -51,7 +51,7 @@ html, body {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
 }
 
-/* 좌측 하단 반경 메뉴 래퍼 (내 위치 버튼 바로 위) */
+/* 좌측 하단 반경 메뉴 래퍼 */
 #radius-menu-wrapper {
     position: absolute;
     bottom: 74px;
@@ -63,7 +63,6 @@ html, body {
     gap: 8px;
 }
 
-/* 내 위치 버튼과 동일한 규격의 대표 원형 버튼 */
 #radius-main-btn {
     width: 44px;
     height: 44px;
@@ -82,7 +81,6 @@ html, body {
     transform: scale(0.93);
 }
 
-/* 펼쳐질 옵션 모음 (기본 숨김) */
 #radius-options {
     display: none;
     grid-template-columns: repeat(2, 1fr);
@@ -93,7 +91,6 @@ html, body {
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
 }
 
-/* 활성화 상태 */
 #radius-options.open {
     display: grid;
 }
@@ -121,7 +118,6 @@ html, body {
     border-color: #ef4444;
 }
 
-/* 좌측 하단 내 위치 원형 버튼 */
 #my-loc-btn {
     position: absolute;
     bottom: 20px;
@@ -144,7 +140,6 @@ html, body {
     transform: scale(0.93);
 }
 
-/* 내 위치 점 마커 */
 .my-location-marker {
     position: relative;
     width: 20px;
@@ -179,7 +174,6 @@ html, body {
     100% { transform: scale(2.4); opacity: 0; }
 }
 
-/* 원 최상단 숫자 라벨 */
 .circle-top-label {
     background: #ef4444;
     color: #ffffff;
@@ -192,20 +186,29 @@ html, body {
     pointer-events: none;
 }
 
-/* GPU 가속이 적용된 응급의료기관 말풍선 오버레이 */
+/* 병원 말풍선 오버레이 (클릭 시 눌림 피드백 추가) */
 .hospital-bubble {
     position: relative;
     background: #ffffff;
-    border-radius: 6px;
-    padding: 7px 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    border-radius: 8px;
+    padding: 8px 11px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
     border: 1px solid #cbd5e1;
-    min-width: 150px;
+    min-width: 155px;
     font-size: 11px;
     line-height: 1.4;
-    will-change: transform;
-    transform: translateZ(0);
-    backface-visibility: hidden;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    user-select: none;
+}
+
+.hospital-bubble:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+
+.hospital-bubble:active {
+    transform: scale(0.96);
 }
 
 .hospital-bubble:after {
@@ -239,7 +242,7 @@ html, body {
 
 .bed-badge {
     display: inline-block;
-    padding: 1px 5px;
+    padding: 2px 6px;
     border-radius: 4px;
     font-weight: 600;
     font-size: 10px;
@@ -248,3 +251,155 @@ html, body {
 .bed-normal { background: #dcfce7; color: #15803d; }
 .bed-warning { background: #fef9c3; color: #a16207; }
 .bed-danger  { background: #fee2e2; color: #b91c1c; }
+
+/* ========================================================================== */
+/* 바텀시트 (Bottom Sheet) 및 슬라이드 애니메이션 스타일 */
+/* ========================================================================== */
+.sheet-dim {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 20;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.sheet-dim.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.bottom-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 540px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.18);
+    z-index: 30;
+    padding: 8px 18px 24px 18px;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    touch-action: none;
+}
+
+.bottom-sheet.open {
+    transform: translateY(0);
+}
+
+.sheet-drag-handle-area {
+    width: 100%;
+    padding: 8px 0 12px 0;
+    display: flex;
+    justify-content: center;
+    cursor: grab;
+    touch-action: none;
+}
+
+.sheet-drag-bar {
+    width: 44px;
+    height: 5px;
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.sheet-title-wrap {
+    flex: 1;
+    padding-right: 12px;
+}
+
+.sheet-hospital-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.3;
+}
+
+.sheet-distance {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.sheet-close-btn {
+    background: none;
+    border: none;
+    font-size: 26px;
+    color: #94a3b8;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+}
+
+.sheet-close-btn:hover {
+    color: #334155;
+}
+
+.sheet-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sheet-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.sheet-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.sheet-tel-btn {
+    display: inline-block;
+    background: #007aff;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 6px;
+}
+
+.sheet-msg-section {
+    margin-top: 4px;
+}
+
+.sheet-msg-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #b91c1c;
+    margin-bottom: 5px;
+}
+
+.sheet-msg-box {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #7f1d1d;
+    max-height: 130px;
+    overflow-y: auto;
+    word-break: break-all;
+}
