@@ -24,10 +24,20 @@ function initMap() {
     const mapContainer = document.getElementById('map');
     const mapOption = {
         center: new kakao.maps.LatLng(defaultLat, defaultLng),
-        level: 3
+        level: 3,
+        draggable: true,
+        scroll_wheel: true
     };
 
+    // 지도 생성
     map = new kakao.maps.Map(mapContainer, mapOption);
+
+    // 화면 크기 변경(태블릿 회전, 가상 키보드 등) 시 지도를 다시 계산하여 터치 영역 복구
+    window.addEventListener('resize', function () {
+        if (map) {
+            map.relayout();
+        }
+    });
 
     // 파란색 점 마커 DOM 생성
     const markerContent = document.createElement('div');
