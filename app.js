@@ -1,14 +1,16 @@
+/* global kakao */
+
 // 기본 좌표 (서울시청) - GPS 획득 실패 시 대체용
-var defaultLat = 37.5668;
-var defaultLng = 126.9786;
+const defaultLat = 37.5668;
+const defaultLng = 126.9786;
 
 // 1. 브라우저 위치 정보(GPS) 우선 요청
 if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
         function(position) {
-            var lat = position.coords.latitude;
-            var lng = position.coords.longitude;
-            var accuracy = Math.round(position.coords.accuracy);
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const accuracy = Math.round(position.coords.accuracy);
 
             document.getElementById('status-title').innerText = '✅ 현재 위치 수신 완료';
             document.getElementById('status-title').style.color = '#10b981';
@@ -21,7 +23,7 @@ if (navigator.geolocation) {
             renderMap(lat, lng, '현재 내 위치');
         },
         function(error) {
-            var errorMsg = '위치 권한이 거부되었습니다.';
+            let errorMsg = '위치 권한이 거부되었습니다.';
             if (error.code === 2) errorMsg = '위치를 판별할 수 없습니다.';
             if (error.code === 3) errorMsg = '위치 응답 시간 초과.';
 
@@ -55,21 +57,21 @@ function renderMap(lat, lng, labelText) {
     }
 
     kakao.maps.load(function() {
-        var mapContainer = document.getElementById('map');
-        var mapOption = {
+        const mapContainer = document.getElementById('map');
+        const mapOption = {
             center: new kakao.maps.LatLng(lat, lng),
             level: 3
         };
-        var map = new kakao.maps.Map(mapContainer, mapOption);
+        const map = new kakao.maps.Map(mapContainer, mapOption);
 
         // 마커 생성
-        var marker = new kakao.maps.Marker({
+        const marker = new kakao.maps.Marker({
             position: new kakao.maps.LatLng(lat, lng),
             map: map
         });
 
         // 정보 창 띄우기
-        var infowindow = new kakao.maps.InfoWindow({
+        const infowindow = new kakao.maps.InfoWindow({
             content: '<div style="padding:6px 10px; font-size:12px; font-weight:bold; min-width:100px; text-align:center;">' + labelText + '</div>'
         });
         infowindow.open(map, marker);

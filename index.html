@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +12,7 @@
     <!-- 카카오맵 SDK (외부 원격 라이브러리이므로 head에 유지) -->
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=64961e084dede515b221656f5fe6600c&autoload=false"></script>
 </head>
+
 <body>
 <div id="status-card">
     <strong id="status-title" style="color: #007aff;">📍 위치 확인 중...</strong><br>
@@ -20,6 +22,9 @@
 <div id="map"></div>
 
 <!-- 분리한 자바스크립트 파일 연결 -->
+<!-- 브라우저가 화면 요소들을 먼저 생성한 후에 자바스크립트가 실행되어야 에러 없음 (주의!) -->
 <script src="app.js"></script>
+
 </body>
+
 </html>
