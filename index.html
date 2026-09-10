@@ -25,6 +25,17 @@
     <button id="search-btn" style="background: #007aff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">검색</button>
 </div>
 
+<!-- 1. 좌측 하단 내 위치 이동 원형 버튼 추가 -->
+<button id="my-loc-btn" title="내 위치로 이동" aria-label="내 위치로 이동">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="7"></circle>
+        <line x1="12" y1="1" x2="12" y2="5"></line>
+        <line x1="12" y1="19" x2="12" y2="23"></line>
+        <line x1="1" y1="12" x2="5" y2="12"></line>
+        <line x1="19" y1="12" x2="23" y2="12"></line>
+    </svg>
+</button>
+
 <div id="map"></div>
 
 <!-- 분리한 자바스크립트 파일 연결 -->
