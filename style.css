@@ -30,3 +30,15 @@ html, body {
     line-height: 1.6;
     max-width: 320px;
 }
+#search-box {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    z-index: 10;
+    display: flex;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 8px;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}

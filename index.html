@@ -14,9 +14,15 @@
 </head>
 
 <body>
+
 <div id="status-card">
     <strong id="status-title" style="color: #007aff;">📍 위치 확인 중...</strong><br>
     <span id="coords" style="color: #555;">브라우저 상단의 위치 권한 팝업에서 [허용]을 눌러주세요.</span>
+</div>
+
+<div id="search-box">
+    <input type="text" id="keyword" placeholder="주소 검색" style="border: 1px solid #ccc; padding: 6px 10px; border-radius: 4px; outline: none;">
+    <button id="search-btn" style="background: #007aff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">검색</button>
 </div>
 
 <div id="map"></div>
