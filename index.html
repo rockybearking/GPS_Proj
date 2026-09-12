@@ -6,25 +6,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>카카오맵 실시간 내 위치 & 응급의료기관 조회</title>
     <link rel="stylesheet" href="style.css">
-    <!-- 카카오맵 SDK -->
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=64961e084dede515b221656f5fe6600c&autoload=false"></script>
+    <!-- 카카오 지도 Web SDK (services 라이브러리 포함) -->
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=64961e084dede515b221656f5fe6600c&libraries=services&autoload=false"></script>
 </head>
 
 <body>
 
+<!-- ======================================================================= -->
+<!-- [좌측 상단] 실시간 위치 및 도/분/초 좌표 안내 카드                       -->
+<!-- ======================================================================= -->
 <div id="status-card">
-    <strong id="status-title" style="color: #007aff;">📍 위치 확인 중...</strong><br>
-    <span id="coords" style="color: #555;">브라우저 상단의 위치 권한 팝업에서 [허용]을 눌러주세요.</span>
+    <strong id="status-title" style="color: #007aff;">📍 위치 확인 중...</strong>
+    <div id="coords" style="color: #475569; margin-top: 5px; line-height: 1.6;">
+        브라우저 상단의 위치 권한 팝업에서 [허용]을 눌러주세요.
+    </div>
 </div>
 
+<!-- ======================================================================= -->
+<!-- [우측 하단] 주소 검색 입력창 및 버튼                                    -->
+<!-- ======================================================================= -->
 <div id="search-box">
-    <input type="text" id="keyword" placeholder="주소 검색" style="border: 1px solid #ccc; padding: 6px 10px; border-radius: 4px; outline: none;">
-    <button id="search-btn" style="background: #007aff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">검색</button>
+    <input type="text" id="keyword" placeholder="주소 검색" style="border: 1px solid #cbd5e1; padding: 6px 10px; border-radius: 6px; outline: none; font-size: 12px;">
+    <button id="search-btn" style="background: #007aff; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">검색</button>
 </div>
 
-<!-- 좌측 하단 반경 선택 플로팅 메뉴 (스피드 다이얼) -->
+<!-- ======================================================================= -->
+<!-- [좌측 하단 3단 플로팅 버튼 스택]                                        -->
+<!-- ======================================================================= -->
+
+<!-- 1. 병원 분류 필터 메뉴 (상급종합: 빨간색, 지역의료: 파란색, 일반: 기본색) -->
+<div id="filter-menu-wrapper">
+    <div id="filter-options" class="floating-popup-menu">
+        <div class="filter-title">🏥 응급실 분류 필터</div>
+        <!-- 상급종합병원 필터 (빨간색) -->
+        <label class="filter-item">
+            <input type="checkbox" id="filter-tertiary" checked>
+            <span class="filter-label filter-label-tertiary">상급종합병원 (대학병원 등)</span>
+        </label>
+        <!-- 지역의료원 필터 (파란색) -->
+        <label class="filter-item">
+            <input type="checkbox" id="filter-regional" checked>
+            <span class="filter-label filter-label-regional">지역의료 (의료원)</span>
+        </label>
+        <!-- 일반병원 필터 (기본색 유지) -->
+        <label class="filter-item">
+            <input type="checkbox" id="filter-general" checked>
+            <span class="filter-label filter-label-general">일반병원</span>
+        </label>
+    </div>
+
+    <!-- 필터 토글 버튼 (중괄호 아이콘) -->
+    <button id="filter-main-btn" class="floating-circle-btn" title="응급의료기관 분류 필터" aria-label="응급의료기관 분류 필터">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1e293b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 4a3 3 0 0 0-3 3v3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v3a3 3 0 0 0 3 3"></path>
+            <path d="M17 4a3 3 0 0 1 3 3v3a2 2 0 0 0 2 2 2 2 0 0 0-2 2v3a3 3 0 0 1-3 3"></path>
+        </svg>
+    </button>
+</div>
+
+<!-- 2. 탐색 반경 선택 플로팅 메뉴 (스피드 다이얼 팝업) -->
 <div id="radius-menu-wrapper">
-    <div id="radius-options" class="radius-options">
+    <div id="radius-options" class="floating-popup-menu radius-grid">
         <button class="radius-btn" data-radius="5">5km</button>
         <button class="radius-btn active" data-radius="10">10km</button>
         <button class="radius-btn" data-radius="15">15km</button>
@@ -33,10 +75,12 @@
         <button class="radius-btn" data-radius="40">40km</button>
         <button class="radius-btn" data-radius="50">50km</button>
         <button class="radius-btn" data-radius="100">100km</button>
+        <button class="radius-btn nationwide-btn" data-radius="600">전국</button>
     </div>
 
-    <button id="radius-main-btn" title="탐색 반경 변경" aria-label="탐색 반경 변경">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- 반경 메뉴 토글 버튼 (동심원 아이콘) -->
+    <button id="radius-main-btn" class="floating-circle-btn" title="탐색 반경 변경" aria-label="탐색 반경 변경">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1e293b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
             <circle cx="12" cy="12" r="6"></circle>
             <circle cx="12" cy="12" r="2"></circle>
@@ -44,9 +88,9 @@
     </button>
 </div>
 
-<!-- 좌측 하단 내 위치 이동 원형 버튼 -->
-<button id="my-loc-btn" title="내 위치로 이동" aria-label="내 위치로 이동">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+<!-- 3. 내 위치 즉시 이동 원형 버튼 -->
+<button id="my-loc-btn" class="floating-circle-btn" title="내 위치로 이동" aria-label="내 위치로 이동">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e293b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="7"></circle>
         <line x1="12" y1="1" x2="12" y2="5"></line>
         <line x1="12" y1="19" x2="12" y2="23"></line>
@@ -55,23 +99,37 @@
     </svg>
 </button>
 
+<!-- ======================================================================= -->
+<!-- [지도 영역] 카카오 지도 렌더링 컨테이너                                  -->
+<!-- ======================================================================= -->
 <div id="map"></div>
 
-<!-- 바텀시트 배경 어둡게 처리 (딤 오버레이) -->
+<!-- ======================================================================= -->
+<!-- [모달 및 바텀시트] 병원 상세 정보 슬라이드 패널                         -->
+<!-- ======================================================================= -->
+<!-- 바텀시트 열림 시 지도 배경 어둡게 처리하는 오버레이 -->
 <div id="sheet-dim" class="sheet-dim"></div>
 
-<!-- 하단 슬라이드 바텀시트 -->
+<!-- 하단 슬라이드 바텀시트 컨테이너 -->
 <div id="bottom-sheet" class="bottom-sheet">
+    <!-- 제스처 드래그 손잡이 영역 -->
     <div class="sheet-drag-handle-area" id="sheet-drag-area">
         <div class="sheet-drag-bar"></div>
     </div>
+
+    <!-- 바텀시트 헤더: 기관 유형 뱃지, 병원 이름, 거리, 닫기 버튼 -->
     <div class="sheet-header">
         <div class="sheet-title-wrap">
+            <div class="sheet-badge-wrap">
+                <span id="sheet-hospital-type" class="hospital-type-badge">상급종합</span>
+            </div>
             <h2 id="sheet-hospital-name" class="sheet-hospital-name">병원명</h2>
             <span id="sheet-distance" class="sheet-distance">0.0km</span>
         </div>
         <button id="sheet-close-btn" class="sheet-close-btn" aria-label="닫기">&times;</button>
     </div>
+
+    <!-- 바텀시트 본문: 병상 정보, 전화 통화 버튼, 응급실 특이사항 공지 -->
     <div class="sheet-body">
         <div class="sheet-row">
             <span class="sheet-label">응급실 가용병상</span>
@@ -90,5 +148,4 @@
 
 <script src="app.js"></script>
 </body>
-
 </html>

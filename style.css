@@ -1,3 +1,6 @@
+/* ==========================================================================
+   기본 스타일 초기화 및 레이아웃 설정
+   ========================================================================== */
 * {
     margin: 0;
     padding: 0;
@@ -11,6 +14,9 @@ html, body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+/* ==========================================================================
+   카카오 지도 전체화면 컨테이너
+   ========================================================================== */
 #map {
     width: 100vw;
     height: 100vh;
@@ -23,6 +29,9 @@ html, body {
     user-select: none;
 }
 
+/* ==========================================================================
+   좌측 상단: 현재 내 위치 / 좌표 정보 카드
+   ========================================================================== */
 #status-card {
     position: absolute;
     top: 16px;
@@ -30,14 +39,17 @@ html, body {
     z-index: 10;
     background: rgba(255, 255, 255, 0.95);
     padding: 12px 16px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
     font-size: 13px;
     line-height: 1.5;
-    max-width: 320px;
-    pointer-events: none;
+    max-width: 340px;
+    pointer-events: none; /* 지도 클릭 간섭 방지 */
 }
 
+/* ==========================================================================
+   우측 하단: 주소 검색창
+   ========================================================================== */
 #search-box {
     position: absolute;
     bottom: 16px;
@@ -47,23 +59,14 @@ html, body {
     gap: 6px;
     background: rgba(255, 255, 255, 0.95);
     padding: 8px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+    border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
 }
 
-/* 좌측 하단 반경 메뉴 래퍼 */
-#radius-menu-wrapper {
-    position: absolute;
-    bottom: 74px;
-    left: 20px;
-    z-index: 10;
-    display: flex;
-    flex-direction: column-reverse;
-    align-items: center;
-    gap: 8px;
-}
-
-#radius-main-btn {
+/* ==========================================================================
+   좌측 하단 공통 플로팅 버튼 컴포넌트
+   ========================================================================== */
+.floating-circle-btn {
     width: 44px;
     height: 44px;
     border-radius: 50%;
@@ -74,24 +77,71 @@ html, body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: transform 0.1s;
+    transition: transform 0.1s ease, background-color 0.15s;
+    user-select: none;
 }
 
-#radius-main-btn:active {
-    transform: scale(0.93);
+.floating-circle-btn:active {
+    transform: scale(0.92);
 }
 
-#radius-options {
+/* 3단 수직 위치 배치 (아래부터: 내 위치 20px, 반경메뉴 74px, 필터메뉴 128px) */
+#my-loc-btn {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 10;
+}
+
+#radius-menu-wrapper {
+    position: absolute;
+    bottom: 74px;
+    left: 20px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+#filter-menu-wrapper {
+    position: absolute;
+    bottom: 128px;
+    left: 20px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+/* ==========================================================================
+   플로팅 팝업 메뉴 공통 스타일
+   ========================================================================== */
+.floating-popup-menu {
+    display: none;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(4px);
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    border: 1px solid #e2e8f0;
+}
+
+.floating-popup-menu.open {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 반경 선택 버튼 그리드 레이아웃 */
+.radius-grid {
     display: none;
     grid-template-columns: repeat(2, 1fr);
-    gap: 4px;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 8px;
-    border-radius: 8px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+    gap: 5px;
+    width: 165px;
 }
 
-#radius-options.open {
+.radius-grid.open {
     display: grid;
 }
 
@@ -102,44 +152,80 @@ html, body {
     padding: 6px 10px;
     font-size: 11px;
     font-weight: 600;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
     white-space: nowrap;
+    text-align: center;
 }
 
 .radius-btn:hover {
     background: #e2e8f0;
 }
 
-.radius-btn.active {
-    background: #ef4444;
-    color: #ffffff;
-    border-color: #ef4444;
+/* 전국 버튼 (가로 2열 병합) */
+.radius-btn.nationwide-btn {
+    grid-column: span 2;
+    font-weight: 700;
 }
 
-#my-loc-btn {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    z-index: 10;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background-color: #ffffff;
-    border: none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+.radius-btn.active {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+}
+
+/* ==========================================================================
+   병원 분류 필터 팝업 및 라벨 색상 스타일
+   ========================================================================== */
+#filter-options {
+    min-width: 220px;
+    gap: 8px;
+}
+
+.filter-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 6px;
+    margin-bottom: 2px;
+}
+
+.filter-item {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
-    transition: transform 0.1s;
+    padding: 4px 2px;
 }
 
-#my-loc-btn:active {
-    transform: scale(0.93);
+.filter-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #007aff;
+    cursor: pointer;
 }
 
+/* 필터 항목별 텍스트 색상 지정 (상급종합: 빨간색, 지역의료: 파란색, 일반: 기본색) */
+.filter-label-tertiary {
+    color: #ef4444; /* 상급종합: 빨간색 */
+}
+
+.filter-label-regional {
+    color: #2563eb; /* 지역의료: 파란색 */
+}
+
+.filter-label-general {
+    color: #334155; /* 일반병원: 기존 색상 유지 */
+}
+
+/* ==========================================================================
+   지도 위 커스텀 마커 / 오버레이 스타일
+   ========================================================================== */
+/* 1. 내 위치 펄스 마커 */
 .my-location-marker {
     position: relative;
     width: 20px;
@@ -174,19 +260,20 @@ html, body {
     100% { transform: scale(2.4); opacity: 0; }
 }
 
+/* 2. 반경 상단 라벨 뱃지 */
 .circle-top-label {
-    background: #ef4444;
     color: #ffffff;
-    padding: 3px 8px;
-    border-radius: 12px;
+    padding: 3px 10px;
+    border-radius: 14px;
     font-size: 11px;
     font-weight: 700;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     white-space: nowrap;
     pointer-events: none;
+    transition: background-color 0.2s ease;
 }
 
-/* 병원 말풍선 오버레이 (클릭 시 눌림 피드백 추가) */
+/* 3. 지도 위 병원 정보 말풍선 버블 */
 .hospital-bubble {
     position: relative;
     background: #ffffff;
@@ -194,7 +281,7 @@ html, body {
     padding: 8px 11px;
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
     border: 1px solid #cbd5e1;
-    min-width: 155px;
+    min-width: 165px;
     font-size: 11px;
     line-height: 1.4;
     cursor: pointer;
@@ -232,7 +319,7 @@ html, body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 180px;
+    max-width: 185px;
 }
 
 .hospital-info {
@@ -240,6 +327,38 @@ html, body {
     margin-bottom: 4px;
 }
 
+/* 병원 분류 뱃지 공통 및 종류별 색상 */
+.hospital-type-badge {
+    display: inline-block;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-right: 4px;
+}
+
+/* 상급종합병원: 빨간색 계열 */
+.hospital-type-tertiary {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+/* 지역의료원: 파란색 계열 */
+.hospital-type-regional {
+    background-color: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+/* 일반병원: 회색/슬레이트 계열 (기존 유지) */
+.hospital-type-general {
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+
+/* 응급실 가용병상 상태 뱃지 (여유/혼잡/부족) */
 .bed-badge {
     display: inline-block;
     padding: 2px 6px;
@@ -252,9 +371,9 @@ html, body {
 .bed-warning { background: #fef9c3; color: #a16207; }
 .bed-danger  { background: #fee2e2; color: #b91c1c; }
 
-/* ========================================================================== */
-/* 바텀시트 (Bottom Sheet) 및 슬라이드 애니메이션 스타일 */
-/* ========================================================================== */
+/* ==========================================================================
+   하단 슬라이드 바텀시트 및 딤 오버레이
+   ========================================================================== */
 .sheet-dim {
     position: fixed;
     top: 0;
@@ -320,6 +439,10 @@ html, body {
 .sheet-title-wrap {
     flex: 1;
     padding-right: 12px;
+}
+
+.sheet-badge-wrap {
+    margin-bottom: 4px;
 }
 
 .sheet-hospital-name {
